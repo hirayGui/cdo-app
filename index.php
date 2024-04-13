@@ -1,12 +1,67 @@
 <?php
 $currentURL = "https://" . $_SERVER['HTTP_HOST'];
 
-function sortByIndex($index, $order = 'ASC') {
-    return function ($a, $b) use ($index, $order) {
-        if ($order === 'ASC') {
-            return $a[$index] <=> $b[$index];
-        } else {
-            return $b[$index] <=> $a[$index];
+function nameSort($a, $b) {
+    // Se ambos forem null, considerar iguais
+    if ($a === null && $b === null) {
+        return 0;
+    }
+    // Se $a for null, colocar no final
+    elseif ($a === null) {
+        return 1;
+    }
+    // Se $b for null, colocar no final
+    elseif ($b === null) {
+        return -1;
+    }
+    // Ordenar normalmente
+    else {
+        if($_GET['ordem'] === "ASC" ){
+            return ($a <=> $b);
+        }else{
+            return ($b <=> $a);
+        }
+    }
+}
+
+function timeSort($keys) {
+    return function($a, $b) use ($keys) {
+        $valueA = $a;
+        $valueB = $b;
+        foreach ($keys as $key) {
+            if (is_array($valueA) && isset($valueA[$key])) {
+                $valueA = $valueA[$key];
+            } else {
+                $valueA = null;
+            }
+
+            if (is_array($valueB) && isset($valueB[$key])) {
+                $valueB = $valueB[$key];
+            } else {
+                $valueB = null;
+            }
+        }
+
+        // Se ambos forem null ou não definidos, considerar iguais
+        if ($valueA === null && $valueB === null) {
+            return 0;
+        }
+        // Se $a for null ou não definido, colocar no final
+        elseif ($valueA === null) {
+            return 1;
+        }
+        // Se $b for null ou não definido, colocar no final
+        elseif ($valueB === null) {
+            return -1;
+        }
+        // Ordenar normalmente
+        else {
+            if($_GET['ordem'] === "ASC" ){
+                return ($valueA <=> $valueB);
+            }else{
+                return ($valueB <=> $valueA);
+            }
+            
         }
     };
 }
@@ -36,6 +91,15 @@ if(isset($_GET['parque_id']) && !empty($_GET['parque_id'])){
 
     $attractions = $response['liveData'];
 
+    if(isset($_GET['item']) && !empty($_GET['item'])){
+        if($_GET['item'] == 'nome'){
+            usort($attractions, function($a, $b) {
+                return nameSort($a['name'], $b['name']);
+            });
+        }else{
+            usort($attractions, timeSort(array('queue', 'STANDBY', 'waitTime')));
+        }
+    }
 
 
 }else{
@@ -60,6 +124,8 @@ if(isset($_GET['parque_id']) && !empty($_GET['parque_id'])){
     curl_close($ch);
 
     $response = json_decode($response, true);
+
+    $attractions = $response['liveData'];
 }
 
 
