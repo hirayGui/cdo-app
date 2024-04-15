@@ -1,6 +1,8 @@
 <?php
-$currentURL = "https://" . $_SERVER['HTTP_HOST'];
 
+/**
+ * Metodologia de sort por nome
+ */
 function nameSort($a, $b) {
     // Se ambos forem null, considerar iguais
     if ($a === null && $b === null) {
@@ -16,14 +18,21 @@ function nameSort($a, $b) {
     }
     // Ordenar normalmente
     else {
-        if($_GET['ordem'] === "ASC" ){
-            return ($a <=> $b);
+        if(isset($_GET['ordem']) && !empty($_GET['ordem'])){
+            if($_GET['ordem'] === "ASC" ){
+                return ($a <=> $b);
+            }else{
+                return ($b <=> $a);
+            }
         }else{
             return ($b <=> $a);
         }
     }
 }
 
+/**
+ * Metodologia de sort pelo tempo de espera
+ */
 function timeSort($keys) {
     return function($a, $b) use ($keys) {
         $valueA = $a;
@@ -56,8 +65,12 @@ function timeSort($keys) {
         }
         // Ordenar normalmente
         else {
-            if($_GET['ordem'] === "ASC" ){
-                return ($valueA <=> $valueB);
+            if(isset($_GET['ordem']) && !empty($_GET['ordem'])){
+                if( $_GET['ordem'] === "ASC" ){
+                    return ($valueA <=> $valueB);
+                }else{
+                    return ($valueB <=> $valueA);
+                }
             }else{
                 return ($valueB <=> $valueA);
             }
@@ -66,6 +79,7 @@ function timeSort($keys) {
     };
 }
 
+//buscando id do parque pelo GET para poder realizar requisição
 if(isset($_GET['parque_id']) && !empty($_GET['parque_id'])){
     $url = 'https://api.themeparks.wiki/v1/entity/'.$_GET['parque_id'].'/live';
 
@@ -88,7 +102,6 @@ if(isset($_GET['parque_id']) && !empty($_GET['parque_id'])){
     curl_close($ch);
 
     $response = json_decode($response, true);
-
     $attractions = $response['liveData'];
 
     if(isset($_GET['item']) && !empty($_GET['item'])){
@@ -99,6 +112,8 @@ if(isset($_GET['parque_id']) && !empty($_GET['parque_id'])){
         }else{
             usort($attractions, timeSort(array('queue', 'STANDBY', 'waitTime')));
         }
+    }else{
+        usort($attractions, timeSort(array('queue', 'STANDBY', 'waitTime')));
     }
 
 
@@ -124,8 +139,19 @@ if(isset($_GET['parque_id']) && !empty($_GET['parque_id'])){
     curl_close($ch);
 
     $response = json_decode($response, true);
-
     $attractions = $response['liveData'];
+
+    if(isset($_GET['item']) && !empty($_GET['item'])){
+        if($_GET['item'] == 'nome'){
+            usort($attractions, function($a, $b) {
+                return nameSort($a['name'], $b['name']);
+            });
+        }else{
+            usort($attractions, timeSort(array('queue', 'STANDBY', 'waitTime')));
+        }
+    }else{
+        usort($attractions, timeSort(array('queue', 'STANDBY', 'waitTime')));
+    }
 }
 
 
